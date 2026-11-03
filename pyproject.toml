@@ -1,0 +1,24 @@
+[project]
+name = "voyage-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "nsrathour", email = "rathournavdityasingh@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.14.2",
+    "pytest>=9.2.0",
+]
+
+[project.scripts]
+voyage-ai = "voyage_ai:main"
+
+[build-system]
+requires = ["uv_build>=0.12.4,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
