@@ -1,4 +1,3 @@
-
 from datetime import date
 
 from app.models.schemas import FlightOption
@@ -12,12 +11,9 @@ def search_flights(
     passengers: int = 1
 ):
     """
-    Search available flights between two destinations.
-
-    This is currently a mock implementation.
+    Search mock round-trip flights between two destinations.
     """
 
-    # Validate dates
     departure = date.fromisoformat(departure_date)
     returning = date.fromisoformat(return_date)
 
@@ -27,8 +23,8 @@ def search_flights(
     if passengers < 1:
         raise ValueError("Passengers must be at least 1")
 
-    # Mock flight data
-    flights = [
+    # Outbound flight data
+    outbound_flights = [
         FlightOption(
             airline="IndiGo",
             departure_time="06:30",
@@ -52,14 +48,54 @@ def search_flights(
         )
     ]
 
+    # Return flight data
+    return_flights = [
+        FlightOption(
+            airline="IndiGo",
+            departure_time="08:00",
+            arrival_time="10:30",
+            duration="2h 30m",
+            price_inr=5800 * passengers
+        ),
+        FlightOption(
+            airline="Air India",
+            departure_time="14:00",
+            arrival_time="16:45",
+            duration="2h 45m",
+            price_inr=6500 * passengers
+        ),
+        FlightOption(
+            airline="Akasa Air",
+            departure_time="19:00",
+            arrival_time="21:30",
+            duration="2h 30m",
+            price_inr=6200 * passengers
+        )
+    ]
+
     return {
         "status": "success",
         "source": "mock",
-        "origin": origin,
-        "destination": destination,
-        "departure_date": departure_date,
-        "return_date": return_date,
-        "flights": [
-            flight.model_dump() for flight in flights
-        ]
+
+        "outbound": {
+            "origin": origin,
+            "destination": destination,
+            "date": departure_date,
+            "flights": [
+                flight.model_dump()
+                for flight in outbound_flights
+            ]
+        },
+
+        "return": {
+            "origin": destination,
+            "destination": origin,
+            "date": return_date,
+            "flights": [
+                flight.model_dump()
+                for flight in return_flights
+            ]
+        },
+
+        "passengers": passengers
     }

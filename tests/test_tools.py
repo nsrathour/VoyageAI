@@ -18,8 +18,23 @@ def test_search_flights_success():
     )
 
     assert result["status"] == "success"
-    assert len(result["flights"]) == 3
-    assert result["flights"][0]["airline"] == "IndiGo"
+    assert result["source"] == "mock"
+
+    # Check outbound flights
+    assert len(result["outbound"]["flights"]) == 3
+
+    # Check return flights
+    assert len(result["return"]["flights"]) == 3
+
+    # Check route information
+    assert result["outbound"]["origin"] == "Delhi"
+    assert result["outbound"]["destination"] == "Goa"
+
+    assert result["return"]["origin"] == "Goa"
+    assert result["return"]["destination"] == "Delhi"
+
+    # Check passenger count
+    assert result["passengers"] == 2
 
 
 def test_search_flights_invalid_return_date():
