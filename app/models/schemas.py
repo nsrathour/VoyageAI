@@ -17,7 +17,9 @@ class FlightOption(BaseModel):
     departure_time: str
     arrival_time: str
     duration: str
-    price_inr: float
+
+    price_per_passenger: float
+    total_price: float
 
 
 class TrainOption(BaseModel):
@@ -25,7 +27,8 @@ class TrainOption(BaseModel):
     departure_time: str
     arrival_time: str
     duration: str
-    price_inr: float
+    price_per_passenger: float
+    total_price: float
 
 
 class HotelOption(BaseModel):
@@ -33,7 +36,7 @@ class HotelOption(BaseModel):
     location: str
     rating: float
     price_per_night: float
-
+    total_price: float
 
 class RestaurantOption(BaseModel):
     restaurant_name: str

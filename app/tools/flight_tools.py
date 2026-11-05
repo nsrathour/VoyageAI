@@ -1,3 +1,4 @@
+
 from datetime import date
 
 from app.models.schemas import FlightOption
@@ -14,6 +15,7 @@ def search_flights(
     Search mock round-trip flights between two destinations.
     """
 
+    # Validate dates
     departure = date.fromisoformat(departure_date)
     returning = date.fromisoformat(return_date)
 
@@ -30,21 +32,24 @@ def search_flights(
             departure_time="06:30",
             arrival_time="09:00",
             duration="2h 30m",
-            price_inr=5500 * passengers
+            price_per_passenger=5500,
+            total_price=5500 * passengers
         ),
         FlightOption(
             airline="Air India",
             departure_time="11:00",
             arrival_time="13:45",
             duration="2h 45m",
-            price_inr=6800 * passengers
+            price_per_passenger=6800,
+            total_price=6800 * passengers
         ),
         FlightOption(
             airline="Akasa Air",
             departure_time="17:30",
             arrival_time="20:00",
             duration="2h 30m",
-            price_inr=6100 * passengers
+            price_per_passenger=6100,
+            total_price=6100 * passengers
         )
     ]
 
@@ -55,21 +60,24 @@ def search_flights(
             departure_time="08:00",
             arrival_time="10:30",
             duration="2h 30m",
-            price_inr=5800 * passengers
+            price_per_passenger=5800,
+            total_price=5800 * passengers
         ),
         FlightOption(
             airline="Air India",
             departure_time="14:00",
             arrival_time="16:45",
             duration="2h 45m",
-            price_inr=6500 * passengers
+            price_per_passenger=6500,
+            total_price=6500 * passengers
         ),
         FlightOption(
             airline="Akasa Air",
             departure_time="19:00",
             arrival_time="21:30",
             duration="2h 30m",
-            price_inr=6200 * passengers
+            price_per_passenger=6200,
+            total_price=6200 * passengers
         )
     ]
 

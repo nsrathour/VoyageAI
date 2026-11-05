@@ -98,9 +98,9 @@ def run_agent(query: str):
 if __name__ == "__main__":
 
     user_query = (
-        "Find flights from Delhi to Goa on 2026-12-11 "
-        "and return on 2026-12-16 for 2 passengers. "
-        "Compare the available options and recommend one."
+    "Find hotels in Goa from 2026-12-11 "
+    "to 2026-12-14 for 2 guests. "
+    "Compare the options based on rating and total price."
     )
 
     final_response = run_agent(user_query)

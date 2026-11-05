@@ -47,11 +47,15 @@ def search_restaurants(
     ]
 
     # Filter restaurants based on minimum rating
-    filtered_restaurants = [
+    filtered_restaurants = sorted(
+    [
         restaurant
         for restaurant in restaurants
         if restaurant.rating >= min_rating
-    ]
+    ],
+    key=lambda restaurant: restaurant.rating,
+    reverse=True
+)
 
     return {
         "status": "success",

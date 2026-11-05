@@ -1,4 +1,3 @@
-
 import pytest
 
 from app.tools.flight_tools import search_flights
