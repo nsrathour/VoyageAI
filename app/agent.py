@@ -1,109 +1,192 @@
 from langchain_core.messages import (
     HumanMessage,
-    SystemMessage,
-    ToolMessage
+    SystemMessage
 )
+from langgraph.types import Command
+from uuid import uuid4
 
-from app.llm import llm
-from app.tools.langchain_tools import travel_tools
+from app.graph.workflow import graph
 
 SYSTEM_PROMPT = """
-You are VoyageAI, an intelligent AI travel assistant.
+You are VoyageAI, an intelligent AI travel planning assistant.
 
-Your responsibilities:
-1. Help users plan their trips.
-2. Search flights, trains, hotels, and restaurants using available tools.
-3. Compare available travel options and recommend suitable choices.
-4. Consider the user's budget, dates, destination, and preferences.
+## 1. Understand the User's Requirements
 
-Important rules:
-1. Always use available tools to retrieve travel information.
-2. Never invent flight, train, hotel, or restaurant information.
-3. Clearly mention that the current travel data is mock data.
-4. If hotels are unavailable, suggest alternative dates.
-5. Never change the user's travel dates without their approval.
-6. Do not claim that any booking has been made.
-7. Provide clear and structured responses.
+Before calling any tool, validate that all required arguments
+for that tool are available.
+
+Required information:
+
+For flight searches:
+- Origin
+- Destination
+- Departure date
+- Return date
+- Number of passengers
+
+For train searches:
+- Origin
+- Destination
+- Departure date
+- Number of passengers
+
+For hotel searches:
+- Destination
+- Check-in date
+- Check-out date
+- Number of guests
+
+For restaurant searches:
+- Location
+
+IMPORTANT:
+- Never call a tool with missing, empty, or unknown required arguments.
+- Never use empty strings as default dates.
+- Never invent dates, passenger counts, or guest counts.
+- If required information is missing, DO NOT call the tool.
+- Ask the user a clear follow-up question to collect missing information.
+
+## 2. Travel Search Strategy
+
+1. Search transportation based on user preference.
+2. Compare transportation options.
+3. Search hotels for requested dates.
+4. Compare hotels based on rating, location, and total price.
+5. Search nearby restaurants when requested.
+
+Only call tools relevant to the user's request.
+
+## 3. Budget Management
+
+- Distinguish per-person prices from total prices.
+- Calculate transportation costs for all passengers.
+- Consider hotel total price for the complete stay.
+- Compare estimated costs against the user's budget.
+- Never claim a trip is within budget without calculating the costs.
+
+## 4. Handling Unavailability
+
+- Inform the user if hotels are unavailable.
+- Suggest alternative dates when appropriate.
+- Never change travel dates without user approval.
+
+## 5. Accuracy and Safety
+
+- Always use available tools for travel information.
+- Never invent travel options, prices, ratings, or availability.
+- Clearly identify travel results as mock data.
+- Never claim that a booking has been made.
+- Never silently modify user requirements.
+
+## 6. Response Format
+
+Provide structured responses with:
+- Travel request summary
+- Transportation options, when requested
+- Hotel recommendations, when requested
+- Restaurant recommendations, when requested
+- Estimated costs and budget comparison
+- Clear reasoning behind recommendations
+
+Be concise and transparent.
 """
 
 
-llm_with_tools = llm.bind_tools(travel_tools)
 
-tool_map = {
-    tool.name: tool
-    for tool in travel_tools
-}
+def run_agent(
+    query: str,
+    thread_id: str,
+    approval: str | None = None
+):
+    """
+    Execute or resume the VoyageAI LangGraph workflow.
+    """
 
+    config = {
+        "configurable": {
+            "thread_id": thread_id
+        },
+        "recursion_limit": 25
+    }
 
-def run_agent(query: str):
+    # Step 1: Initial execution
+    if approval is None:
 
-    # Step 1: Store the user's request
-    messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=query)
-    ]
+        initial_state = {
+            "user_query": query,
+            "messages": [
+                SystemMessage(content=SYSTEM_PROMPT),
+                HumanMessage(content=query)
+            ],
+            "final_response": ""
+        }
 
-    # Step 2: Ask LLM to decide what to do
-    response = llm_with_tools.invoke(messages)
+        result = graph.invoke(
+            initial_state,
+            config=config
+        )
 
-    tool_rounds = 0
-    max_tool_rounds = 5
+    # Step 2: Resume after human approval
+    else:
 
-    # Step 3: Continue while LLM requests tool execution
-    while response.tool_calls and tool_rounds < max_tool_rounds:
-
-        print("\nLLM requested tool execution:")
-
-        # Preserve the AI message containing tool calls
-        messages.append(response)
-
-        for tool_call in response.tool_calls:
-
-            tool_name = tool_call["name"]
-            tool_args = tool_call["args"]
-
-            print(f"\nExecuting tool: {tool_name}")
-
-            selected_tool = tool_map.get(tool_name)
-
-            if selected_tool is None:
-                raise ValueError(f"Unknown tool: {tool_name}")
-
-            # Step 4: Execute the selected tool
-            result = selected_tool.invoke(tool_args)
-
-            print("Tool execution completed.")
-
-            # Step 5: Send tool result back as an observation
-            messages.append(
-                ToolMessage(
-                    content=str(result),
-                    tool_call_id=tool_call["id"],
-                    name=tool_name
-                )
+        if approval.strip().lower() not in {
+            "approve", "approved", "yes", "reject", "rejected", "no"
+        }:
+            raise ValueError(
+                "Approval must be approve or reject."
             )
 
-        # Step 6: Ask LLM to process the observations
-        response = llm_with_tools.invoke(messages)
+        result = graph.invoke(
+            Command(resume=approval),
+            config=config
+        )
 
-        tool_rounds += 1
+    # Step 3: Check whether graph is interrupted
+    if result.get("__interrupt__"):
 
-    if response.tool_calls:
-        raise RuntimeError("Maximum tool execution rounds reached.")
+        interruption = result["__interrupt__"][0]
 
-    # Step 7: Return final LLM response
-    return response.content
+        return {
+            "status": "interrupted",
+            "approval_request": interruption.value,
+            "thread_id": thread_id
+        }
+
+    # Step 4: Return final response
+    return {
+        "status": "completed",
+        "response": result["messages"][-1].content,
+        "thread_id": thread_id
+    }
+
+
 
 
 if __name__ == "__main__":
 
     user_query = (
-    "Find hotels in Goa from 2026-12-11 "
-    "to 2026-12-14 for 2 guests. "
-    "Compare the options based on rating and total price."
+        "Plan a complete trip from Delhi to Goa for 2 passengers. "
+        "Departure date is 2026-12-11 and return date is 2026-12-16. "
+        "Our total trip budget is 35000 INR. "
+        "Search round-trip flights and compare available options. "
+        "Find hotels in Goa for 2 guests from 2026-12-11 "
+        "to 2026-12-16. "
+        "Also find restaurants near the recommended hotel "
+        "with a minimum rating of 4.0. "
+        "Recommend a suitable combination within our budget."
     )
 
-    final_response = run_agent(user_query)
+    thread_id = str(uuid4())
 
-    print("\n========== VOYAGEAI RESPONSE ==========")
-    print(final_response)
+    result = run_agent(
+        query=user_query,
+        thread_id=thread_id
+    )
+
+    if result["status"] == "interrupted":
+        print("\n========== APPROVAL REQUIRED ==========")
+        print(result["approval_request"])
+
+    else:
+        print("\n========== VOYAGEAI RESPONSE ==========")
+        print(result["response"])

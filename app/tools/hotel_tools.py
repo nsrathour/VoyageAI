@@ -31,6 +31,7 @@ def search_hotels(
     if check_in == "2026-12-10":
         return {
             "status": "unavailable",
+            "requires_alternative_dates": True,
             "source": "mock",
             "message": "No hotels available for the selected dates.",
             "destination": destination,
