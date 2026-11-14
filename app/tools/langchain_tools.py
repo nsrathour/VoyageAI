@@ -12,6 +12,7 @@ from app.tools.hotel_tools import search_hotels
 from app.tools.restaurant_tools import search_restaurants
 from app.tools.serpapi_hotels import search_real_hotels
 from app.tools.serpapi_restaurants import search_real_restaurants
+from app.tools.railcore_trains import search_real_trains
 
 load_dotenv()
 
@@ -124,6 +125,7 @@ def flight_search_tool(
     )
 
 
+
 @tool
 def train_search_tool(
     origin: str,
@@ -131,13 +133,49 @@ def train_search_tool(
     departure_date: str,
     passengers: int = 1
 ):
-    """Search available trains between an origin and destination."""
+    """
+    Search trains using mock or RailCore.
 
-    return search_trains(
-        origin,
-        destination,
-        departure_date,
-        passengers
+    RailCore requires Indian railway station codes,
+    e.g. BSL and ADI.
+    """
+
+    provider = os.getenv(
+        "TRAIN_PROVIDER", "mock"
+    ).strip().lower()
+
+    if provider == "mock":
+        return search_trains(
+            origin,
+            destination,
+            departure_date,
+            passengers
+        )
+
+    if provider == "railcore":
+        if passengers < 1:
+            raise ValueError(
+                "Passengers must be at least 1."
+            )
+
+        result = search_real_trains(
+            origin=origin,
+            destination=destination,
+            departure_date=departure_date
+        )
+
+        return {
+            **result,
+            "passengers": passengers,
+            "pricing_note": (
+                "RailCore results currently contain train schedules "
+                "and travel classes, not verified ticket fares "
+                "or seat availability. Do not invent prices."
+            )
+        }
+
+    raise ValueError(
+        f"Unsupported train provider: {provider}"
     )
 
 
