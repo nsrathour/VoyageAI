@@ -9,3 +9,7 @@ wheels/
 # Virtual environments
 .venv
 .env
+voyageai.db
+voyageai.db-journal
+voyageai.db-shm
+voyageai.db-wal

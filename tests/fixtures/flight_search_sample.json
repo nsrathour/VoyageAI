@@ -1,0 +1,56 @@
+
+{
+  "status": "success",
+  "source": "serpapi_google_flights",
+  "origin": "DEL",
+  "destination": "GOI",
+  "departure_date": "2026-12-11",
+  "return_date": "2026-12-16",
+  "passengers": 1,
+  "outbound": {
+    "status": "success",
+    "flights": [
+      {
+        "airline": "Air India Express",
+        "departure_time": "2026-12-11 18:35",
+        "arrival_time": "2026-12-11 21:15",
+        "duration_minutes": 160,
+        "stops": 0,
+        "price": 8898,
+        "currency": "INR"
+      },
+      {
+        "airline": "IndiGo",
+        "departure_time": "2026-12-11 19:20",
+        "arrival_time": "2026-12-11 21:50",
+        "duration_minutes": 150,
+        "stops": 0,
+        "price": 9765,
+        "currency": "INR"
+      }
+    ]
+  },
+  "return": {
+    "status": "success",
+    "flights": [
+      {
+        "airline": "IndiGo",
+        "departure_time": "2026-12-16 08:10",
+        "arrival_time": "2026-12-16 10:45",
+        "duration_minutes": 155,
+        "stops": 0,
+        "price": 10037,
+        "currency": "INR"
+      },
+      {
+        "airline": "IndiGo",
+        "departure_time": "2026-12-16 20:35",
+        "arrival_time": "2026-12-16 23:10",
+        "duration_minutes": 155,
+        "stops": 0,
+        "price": 10982,
+        "currency": "INR"
+      }
+    ]
+  }
+}

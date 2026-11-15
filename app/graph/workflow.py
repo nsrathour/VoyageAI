@@ -1,6 +1,6 @@
 
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
+
 
 from app.graph.state import AgentState
 from app.graph.nodes import (
@@ -12,6 +12,9 @@ from app.graph.nodes import (
     human_approval_node,
     route_after_approval
 )
+import sqlite3
+from pathlib import Path
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 # Step 1: Create graph builder
 workflow = StateGraph(AgentState)
@@ -65,10 +68,26 @@ workflow.add_conditional_edges(
 )
 
 # Step 8: Configure checkpointing
-memory = MemorySaver()
 
-graph = workflow.compile(
-    checkpointer=memory
+# Project root directory
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+# Persistent SQLite database
+DB_PATH = BASE_DIR / "voyageai.db"
+
+# Allow the connection to be used by FastAPI worker threads
+connection = sqlite3.connect(
+    str(DB_PATH),
+    check_same_thread=False
 )
+
+# Create persistent LangGraph checkpointer
+memory = SqliteSaver(connection)
+
+# Compile workflow with persistent memory
+graph = workflow.compile(checkpointer=memory)
+
+print(f"LangGraph SQLite memory configured: {DB_PATH}")
+
 
 print(graph.get_graph().draw_ascii())
