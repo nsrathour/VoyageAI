@@ -1437,10 +1437,11 @@ wheels = [
 [[package]]
 name = "voyage-ai"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "grandalf" },
+    { name = "httpx" },
     { name = "langchain" },
     { name = "langchain-openai" },
     { name = "langgraph" },
@@ -1455,6 +1456,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.162.2" },
     { name = "grandalf", specifier = ">=0.8" },
+    { name = "httpx" },
     { name = "langchain", specifier = ">=1.4.8" },
     { name = "langchain-openai", specifier = ">=1.7.3" },
     { name = "langgraph", specifier = ">=1.2.19" },
