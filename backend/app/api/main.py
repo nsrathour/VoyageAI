@@ -33,6 +33,7 @@ app.add_middleware(
 # Request Models
 class ChatRequest(BaseModel):
     query: str = Field(min_length=1)
+    thread_id: str | None = None
 
 
 class ApprovalRequest(BaseModel):
@@ -53,7 +54,7 @@ def health_check():
 @app.post("/api/chat")
 def chat(request: ChatRequest):
     try:
-        thread_id = str(uuid4())
+        thread_id = request.thread_id or str(uuid4())
 
         print(
             f"[CHAT] Starting agent | Thread ID: {thread_id}",

@@ -1,11 +1,11 @@
-from langchain_core.messages import (
-    HumanMessage,
-    SystemMessage
-)
-from langgraph.types import Command
+
 from uuid import uuid4
 
+from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.types import Command
+
 from app.graph.workflow import graph
+
 
 SYSTEM_PROMPT = """
 You are VoyageAI, an intelligent AI travel planning assistant.
@@ -86,59 +86,103 @@ Provide structured responses with:
 - Hotel recommendations, when requested
 - Restaurant recommendations, when requested
 - Estimated costs and budget comparison
-- Clear reasoning behind recommendations
+- Clear reasoning behind recommendations.
 
 Be concise and transparent.
 """
 
 
-
 def run_agent(
     query: str,
     thread_id: str,
-    approval: str | None = None
+    approval: str | None = None,
 ):
     """
-    Execute or resume the VoyageAI LangGraph workflow.
+    Execute VoyageAI for a new conversation, a follow-up
+    message, or resume an interrupted HITL workflow.
     """
 
     config = {
         "configurable": {
-            "thread_id": thread_id
+            "thread_id": thread_id,
         },
-        "recursion_limit": 25
+        "recursion_limit": 25,
     }
 
-    # Step 1: Initial execution
+    # Step 1: Initial execution or follow-up message
     if approval is None:
 
-        initial_state = {
-            "user_query": query,
-            "messages": [
-                SystemMessage(content=SYSTEM_PROMPT),
-                HumanMessage(content=query)
-            ],
-            "final_response": ""
-        }
+        if not query or not query.strip():
+            raise ValueError("Travel query cannot be empty.")
+
+        # Retrieve existing checkpoint from SQLite
+        snapshot = graph.get_state(config)
+
+        # Prevent new messages while waiting for human approval
+        if snapshot.next:
+            raise ValueError(
+                "This conversation has a pending workflow. "
+                "Approve or reject the suggested dates first."
+            )
+
+        has_history = bool(
+            snapshot.values.get("messages")
+        )
+
+        if has_history:
+            # Existing conversation: append only the new message
+            initial_state = {
+                "user_query": query,
+                "messages": [
+                    HumanMessage(content=query)
+                ],
+            }
+
+        else:
+            # New conversation: include the system prompt once
+            initial_state = {
+                "user_query": query,
+                "messages": [
+                    SystemMessage(content=SYSTEM_PROMPT),
+                    HumanMessage(content=query),
+                ],
+                "final_response": "",
+            }
 
         result = graph.invoke(
             initial_state,
-            config=config
+            config=config,
         )
 
     # Step 2: Resume after human approval
     else:
 
-        if approval.strip().lower() not in {
-            "approve", "approved", "yes", "reject", "rejected", "no"
+        normalized_approval = approval.strip().lower()
+
+        if normalized_approval not in {
+            "approve",
+            "approved",
+            "yes",
+            "reject",
+            "rejected",
+            "no",
         }:
             raise ValueError(
                 "Approval must be approve or reject."
             )
 
+        # Ensure there is an interrupted workflow to resume
+        snapshot = graph.get_state(config)
+
+        if not snapshot.next or not snapshot.interrupts:
+            raise ValueError(
+                "No pending approval request exists "
+                "for this conversation."
+            )
+
         result = graph.invoke(
-            Command(resume=approval),
-            config=config
+            Command(resume=normalized_approval),
+            config=config,
         )
 
     # Step 3: Check whether graph is interrupted
@@ -149,17 +193,15 @@ def run_agent(
         return {
             "status": "interrupted",
             "approval_request": interruption.value,
-            "thread_id": thread_id
+            "thread_id": thread_id,
         }
 
     # Step 4: Return final response
     return {
         "status": "completed",
         "response": result["messages"][-1].content,
-        "thread_id": thread_id
+        "thread_id": thread_id,
     }
-
-
 
 
 if __name__ == "__main__":
@@ -180,7 +222,7 @@ if __name__ == "__main__":
 
     result = run_agent(
         query=user_query,
-        thread_id=thread_id
+        thread_id=thread_id,
     )
 
     if result["status"] == "interrupted":
