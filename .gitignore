@@ -1,15 +1,13 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
+# Local databases
+*.db
+*.db-shm
+*.db-wal
 
-# Virtual environments
-.venv
+# Secrets
 .env
-voyageai.db
-voyageai.db-journal
-voyageai.db-shm
-voyageai.db-wal
+.env.*
+!.env.example
+
+# Dependencies
+.venv/
+node_modules/

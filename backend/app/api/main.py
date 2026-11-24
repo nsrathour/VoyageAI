@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.agent import run_agent
+from app.api.conversations import router as conversations_router
 
 
 # FastAPI Application
@@ -18,18 +19,20 @@ app = FastAPI(
 
 
 # CORS Configuration
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
-    allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS", "DELETE",],
+    allow_headers=["*"],
 )
 
-
+app.include_router(conversations_router)
 # Request Models
 class ChatRequest(BaseModel):
     query: str = Field(min_length=1)
